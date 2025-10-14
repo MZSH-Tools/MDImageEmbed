@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QTextEdit, QFileDialog, QMessageBox, QSplitter,
     QLabel, QStatusBar
 )
-from PyQt6.QtCore import Qt, QTimer, QUrl, Slot
+from PyQt6.QtCore import Qt, QTimer, QUrl, pyqtSlot as Slot
 from PyQt6.QtGui import QFont
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 import markdown2
@@ -329,33 +329,12 @@ class MainWindow(QMainWindow):
                 ]
             )
 
-            # 加载 CSS 样式
-            cssPath = Path(__file__).parent / 'assets' / 'style.css'
-            cssContent = ""
-            if cssPath.exists():
-                with open(cssPath, 'r', encoding='utf-8') as f:
-                    cssContent = f.read()
-
-            # 组合完整 HTML
-            fullHtml = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>{cssContent}</style>
-            </head>
-            <body>
-                {htmlContent}
-            </body>
-            </html>
-            """
-
-            # 设置 base URL 为当前文件所在目录
+            # 设置 base URL 为当前文件所在目录,以便正确加载相对路径的图片
             if self.CurrentFilePath:
                 baseUrl = QUrl.fromLocalFile(os.path.dirname(self.CurrentFilePath) + os.sep)
-                self.Preview.setHtml(fullHtml, baseUrl)
+                self.Preview.setHtml(htmlContent, baseUrl)
             else:
-                self.Preview.setHtml(fullHtml)
+                self.Preview.setHtml(htmlContent)
 
         except Exception as e:
             errorHtml = f"""

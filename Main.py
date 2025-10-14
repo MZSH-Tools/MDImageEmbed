@@ -11,7 +11,6 @@ def InjectSysPath():
     """将 Source 目录添加到系统路径"""
     base = os.path.dirname(os.path.abspath(__file__))
     for p in [
-        base,
         os.path.join(base, "Source", "UI"),
         os.path.join(base, "Source", "Logic")
     ]:
