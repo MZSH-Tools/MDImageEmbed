@@ -18,27 +18,16 @@ MDImageEmbed 是一个 Obsidian 插件，可以将 Markdown 文件中的本地�
 
 ## ✨ 功能特性
 
-### 核心功能
-
 - 📋 **复制为 Base64 格式**：右键文件 → 转换后自动复制到剪贴板
 - 💾 **另存为 Base64 格式**：右键文件 → 生成新文件（`原文件名_base64.md`）
-
-### 智能特性
-
 - 🎯 **智能路径解析**：自动处理 Obsidian 各种图片路径格式
-  - 标准 Markdown: `![alt](path)`
-  - 尖括号路径: `![alt](<path>)`
-  - Obsidian Wiki 链接: `![[image.png]]`
-  - 绝对路径和相对路径
-- 🔄 **自动跳过**：
-  - 已转换的 Base64 图片
-  - 网络图片 (http:// / https://)
-  - 找不到的图片
+- 🔄 **自动跳过**：已转换的 Base64 图片
 - 🖼️ **支持格式**：PNG, JPG, JPEG, GIF, WebP, SVG, BMP
+- ⚙️ **自定义设置**：可配置文件后缀、转换规则、日志显示等
 
 ## 📦 安装
 
-### 方法 1: 手动安装（推荐）
+### 方法 1: 手动安装
 
 1. 下载最新版本的 `main.js` 和 `manifest.json`
 2. 在你的 Obsidian Vault 中创建插件目录：
@@ -77,171 +66,35 @@ cp manifest.json "<Vault>/.obsidian/plugins/md-image-embed/manifest.json"
 ### 复制到剪贴板
 
 1. 在 Obsidian 文件浏览器中右键点击任意 `.md` 文件
-2. 选择 **📋 复制为 Base64 格式**
-3. 等待转换完成（会显示提示 ✅ 已复制 Base64 格式到剪贴板）
-4. 粘贴到任何需要的地方（博客编辑器、公众号后台等）
+2. 选择 **Copy as Base64 format**
+3. 等待转换完成（会显示提示）
+4. 粘贴到任何需要的地方
 
 ### 另存为新文件
 
 1. 在 Obsidian 文件浏览器中右键点击任意 `.md` 文件
-2. 选择 **💾 另存为 Base64 格式**
+2. 选择 **Save as Base64 format**
 3. 自动生成新文件：`原文件名_base64.md`
-4. 新文件中所有本地图片已转换为 Base64 格式
 
-## 📋 使用场景
+### 插件设置
 
-### 场景 1: 发布博客文章
+在 **设置 → 社区插件 → MD Image Embed** 中可以配置：
 
-**优势**：无需上传图片到图床，一键发布
-
-### 场景 2: 分享技术文档
-
-你写了一篇包含大量截图的技术文档，需要分享给同事：
-
-1. 右键文件 → **另存为 Base64 格式**
-2. 发送生成的 `_base64.md` 文件
-3. 同事打开即可看到完整内容（无需下载图片文件夹）
-
-### 场景 3: 公众号发布
-
-公众号不支持外链图片，使用本插件：
-
-1. 右键笔记 → **复制为 Base64 格式**
-2. 粘贴到公众号编辑器
-3. 所有图片正常显示
-
-## 🔧 技术细节
-
-### 路径解析策略
-
-插件使用三层路径解析机制，确保找到图片：
-
-1. **Vault 根目录查找**：`/附件/image.png` → `<Vault>/附件/image.png`
-2. **相对路径查找**：`./images/pic.png` → 相对于当前 MD 文件
-3. **Obsidian 链接解析**：使用 Obsidian 的 `getFirstLinkpathDest` API
-
-### 支持的图片语法
-
-```markdown
-# 标准 Markdown
-![描述](path/to/image.png)
-
-# 尖括号路径（Obsidian 常用）
-![描述](<path/to/image.png>)
-![描述](</附件/image.png>)
-
-# Obsidian Wiki 链接
-![[image.png]]
-![[folder/image.png]]
-```
-
-### Base64 编码
-
-- 使用浏览器原生 `btoa()` 方法
-- 自动识别 MIME 类型
-- 支持所有主流图片格式
-
-## 📂 项目结构
-
-```
-MDImageEmbed/
-├── main.ts                      # 插件主文件（TypeScript 源码）
-├── main.js                      # 编译后的插件文件
-├── manifest.json                # 插件配置
-├── versions.json                # 版本兼容性管理
-├── styles.css                   # 插件样式
-├── package.json                 # 依赖管理
-├── tsconfig.json                # TypeScript 配置
-├── esbuild.config.mjs           # 构建配置
-├── .gitignore                   # Git 忽略文件
-├── LICENSE                      # MIT 许可证
-└── README.md                    # 项目说明（本文件）
-```
+- **Show conversion log**：是否显示详细转换日志
+- **File suffix**：另存为文件的后缀（默认 `_base64`）
+- **Convert Wiki links**：是否转换 Obsidian Wiki 链接 `![[image.png]]`
+- **Skip Base64 images**：是否跳过已有的 Base64 图片
 
 ## ⚠️ 注意事项
 
-### 文件大小
-
-Base64 编码会增加约 **33%** 的文件大小：
-
-- 原图 100KB → Base64 约 133KB
-- 多图文档可能会变得很大
-
-**建议**：
-- 仅在需要导出/分享时使用
-- 大量图片的文档建议压缩图片后再转换
-
-### 性能
-
-- 转换速度取决于图片数量和大小
-- 10 张图片（总计 5MB）约需 2-3 秒
-- 转换过程在后台异步进行，不会卡顿界面
-
-### 兼容性
-
-- ✅ Obsidian 桌面版（Windows, macOS, Linux）
-- ✅ Obsidian 移动版（iOS, Android）
-- ⚠️ 需要 Obsidian 0.15.0 或更高版本
-
-## 🛠️ 开发
-
-### 环境要求
-
-- Node.js >= 16
-- npm >= 7
-
-### 开发命令
-
-```bash
-# 安装依赖
-npm install
-
-# 开发模式（自动监听文件变化）
-npm run dev
-
-# 生产构建
-npm run build
-
-# 类型检查
-tsc -noEmit
-```
-
-### 调试
-
-1. 在 Obsidian 中启用开发者工具：`Ctrl+Shift+I` (Windows) / `Cmd+Option+I` (macOS)
-2. 修改代码后按 `Ctrl+R` 重载插件
-3. 查看控制台日志
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-### 贡献指南
-
-1. Fork 本仓库
-2. 创建特性分支：`git checkout -b feature/AmazingFeature`
-3. 提交更改：`git commit -m 'Add some AmazingFeature'`
-4. 推送到分支：`git push origin feature/AmazingFeature`
-5. 提交 Pull Request
-
-## 📝 更新日志
-
-### v1.0.0 (2024-10-14)
-
-- ✨ 初始版本发布
-- 📋 支持复制为 Base64 格式到剪贴板
-- 💾 支持另存为 Base64 格式新文件
-- 🎯 智能路径解析（Vault 根目录、相对路径、Wiki 链接）
-- 🖼️ 支持 PNG, JPG, JPEG, GIF, WebP, SVG, BMP
+- **仅支持本地图片**：不支持网络图片（`http://` 或 `https://`），网络图片会被自动跳过
+- **文件大小增加**：Base64 编码会增加约 33% 的文件大小
+- **建议使用场景**：仅在需要导出/分享时使用
+- **大图片处理**：大量图片的文档建议压缩图片后再转换
 
 ## 📄 许可证
 
 本项目采用 [MIT License](LICENSE) 开源协议。
-
-## 🙏 致谢
-
-- [Obsidian](https://obsidian.md) - 强大的知识管理工具
-- [Obsidian API](https://github.com/obsidianmd/obsidian-api) - 官方 API 文档
 
 ## 📮 联系方式
 

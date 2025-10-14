@@ -9,7 +9,6 @@ const DEFAULT_SETTINGS = {
 	showConversionLog: true,
 	fileSuffix: '_base64',
 	convertWikiLinks: true,
-	skipNetworkImages: true,
 	skipBase64Images: true
 };
 
@@ -136,8 +135,8 @@ class MDImageEmbedPlugin extends Plugin {
 					continue;
 				}
 
-				// 跳过网络图片
-				if (this.settings.skipNetworkImages && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
+				// 跳过网络图片（不支持）
+				if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
 					skippedCount++;
 					continue;
 				}
@@ -299,18 +298,7 @@ class MDImageEmbedSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		// 设置 4: 跳过网络图片
-		new Setting(containerEl)
-			.setName('Skip network images')
-			.setDesc('Skip images that start with http:// or https://')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.skipNetworkImages)
-				.onChange(async (value) => {
-					this.plugin.settings.skipNetworkImages = value;
-					await this.plugin.saveSettings();
-				}));
-
-		// 设置 5: 跳过 Base64 图片
+		// 设置 4: 跳过 Base64 图片
 		new Setting(containerEl)
 			.setName('Skip Base64 images')
 			.setDesc('Skip images that are already in Base64 format')
