@@ -5,7 +5,13 @@
       "Bash(tree:*)",
       "Bash(dir:*)",
       "Read(//d/GitHub/MZSH-Tools/**)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Read(//c/Users/mengzhishanghun/Desktop/**)",
+      "Bash(cat:*)",
+      "Read(//d/GitHub/mengzhishanghun/MyObsidian/笔记/积累/Perforce/入门系列/**)",
+      "Read(//d/GitHub/mengzhishanghun/MyObsidian/笔记/积累/Perforce/**)",
+      "Read(//d/GitHub/mengzhishanghun/MyObsidian/**)",
+      "Bash(npm install)"
     ],
     "deny": [],
     "ask": []

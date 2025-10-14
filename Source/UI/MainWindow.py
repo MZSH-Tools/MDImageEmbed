@@ -318,6 +318,23 @@ class MainWindow(QMainWindow):
             return
 
         try:
+            # 预处理：移除图片路径中的尖括号,并修正以/开头的相对路径
+            # 例如: ![](</附件/image.png>) -> ![](附件/image.png)
+            import re
+            def FixImagePath(match):
+                alt = match.group(1)
+                path = match.group(2)
+                # 移除开头的 / (如果不是真正的绝对路径)
+                if path.startswith('/') and not path.startswith('//'):
+                    path = path.lstrip('/')
+                return f'![{alt}]({path})'
+
+            markdownContent = re.sub(
+                r'!\[([^\]]*)\]\(<?([^)">]+)>?\)',
+                FixImagePath,
+                markdownContent
+            )
+
             htmlContent = markdown2.markdown(
                 markdownContent,
                 extras=[

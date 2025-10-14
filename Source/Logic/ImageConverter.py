@@ -42,12 +42,13 @@ class ImageConverter:
         self.ConversionLog.clear()
 
         # 匹配 Markdown 图片语法: ![alt](path) 或 ![alt](path "title")
-        pattern = r'!\[([^\]]*)\]\(([^)"\s]+)(?:\s+"[^"]*")?\)'
+        # 支持路径被尖括号包裹的情况: ![alt](<path>)
+        pattern = r'!\[([^\]]*)\]\(<?([^)"\s>]+)>?(?:\s+"[^"]*")?\)'
 
         def ReplaceImage(match):
             """替换单个图片引用"""
             altText = match.group(1)
-            imagePath = match.group(2)
+            imagePath = match.group(2)  # 已自动去除尖括号
 
             # 跳过已经是 base64 的图片
             if imagePath.startswith('data:image'):
@@ -99,7 +100,8 @@ class ImageConverter:
         Returns:
             包含统计信息的字典 {'total', 'base64', 'http', 'local'}
         """
-        pattern = r'!\[([^\]]*)\]\(([^)"\s]+)(?:\s+"[^"]*")?\)'
+        # 支持尖括号包裹的路径
+        pattern = r'!\[([^\]]*)\]\(<?([^)"\s>]+)>?(?:\s+"[^"]*")?\)'
         matches = re.findall(pattern, MarkdownContent)
 
         total = len(matches)
@@ -172,10 +174,32 @@ class ImageConverter:
         Returns:
             图片的绝对路径
         """
+        # 移除开头的 / (Obsidian 等工具会添加 / 前缀,但这不是真正的绝对路径)
+        # 例如: </附件/image.png> -> 附件/image.png
+        hasLeadingSlash = ImagePath.startswith('/') and not ImagePath.startswith('//')
+        if hasLeadingSlash:
+            ImagePath = ImagePath.lstrip('/')
+
         if os.path.isabs(ImagePath):
             return ImagePath
 
         markdownDir = os.path.dirname(self.MarkdownFilePath)
+
+        # 如果路径以 / 开头(已去除),可能是相对于仓库根目录
+        # 优先尝试从可能的仓库根目录查找 (Obsidian 模式)
+        if hasLeadingSlash:
+            # 向上查找可能的仓库根目录 (最多向上5层)
+            currentDir = markdownDir
+            for _ in range(5):
+                testPath = os.path.normpath(os.path.join(currentDir, ImagePath))
+                if os.path.exists(testPath):
+                    return testPath
+                parentDir = os.path.dirname(currentDir)
+                if parentDir == currentDir:  # 已到达根目录
+                    break
+                currentDir = parentDir
+
+        # 否则基于 MD 文件所在目录解析
         return os.path.normpath(os.path.join(markdownDir, ImagePath))
 
     def _IsSupportedImage(self, FilePath: str) -> bool:

@@ -1,0 +1,15 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Build
+main.js
+*.js.map
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
