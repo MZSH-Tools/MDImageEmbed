@@ -1,211 +1,261 @@
 # MDImageEmbed
 
-Markdown 图片内嵌工具 - 将 Markdown 文件中的图片链接转换为 base64 内嵌格式
+> 将 Markdown 文件中的图片转换为 Base64 内嵌格式的 Obsidian 插件
 
-## 功能特性
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)](https://obsidian.md)
 
-- 读取本地 Markdown 文件，将图片转换为 base64 内嵌格式
-- 提供图形界面进行文件选择、编辑和预览
-- 支持编辑、保存、还原等操作
-- 实时预览 Markdown 渲染效果（GitHub 风格）
-- 支持多种图片格式：PNG, JPG, JPEG, GIF, WebP, SVG, BMP
+## 📖 简介
 
-## 界面布局
+MDImageEmbed 是一个 Obsidian 插件，可以将 Markdown 文件中的本地图片转换为 Base64 内嵌格式。适用于导出笔记、发布博客、分享文档等场景，让你的 Markdown 文件真正做到"单文件包含所有内容"。
 
-```
-┌───────────────────────────────────────────────────────────┐
-│  [选择文件] input.md                                       │
-├───────────────────────────────────────────────────────────┤
-│  [转换] [复制] [覆盖] [另存为] [还原]                      │
-├────────────────────────┬──────────────────────────────────┤
-│                        │                                  │
-│   左侧：编辑区          │    右侧：预览区                   │
-│                        │                                  │
-│  可编辑的文本框         │   Markdown 渲染预览               │
-│  显示 Markdown 内容    │   实时显示渲染效果                │
-│                        │                                  │
-│  用户可手动编辑         │   同步更新预览                    │
-│                        │                                  │
-└────────────────────────┴──────────────────────────────────┘
-```
+### 为什么需要这个插件？
 
-## 安装说明
+- 📝 **发布博客**：无需单独上传图片到图床，一个文件搞定
+- 📤 **分享笔记**：发送单个 Markdown 文件，接收者无需下载图片
+- 📱 **公众号/平台**：部分平台不支持外链图片，Base64 完美解决
+- 📦 **归档文档**：避免图片链接失效，永久保存完整内容
 
-### 1. 创建 Conda 环境
+## ✨ 功能特性
 
-```bash
-# 创建新的 conda 环境
-conda create -n MDImageEmbed python=3.10
+### 核心功能
 
-# 激活环境
-conda activate MDImageEmbed
-```
+- 📋 **复制为 Base64 格式**：右键文件 → 转换后自动复制到剪贴板
+- 💾 **另存为 Base64 格式**：右键文件 → 生成新文件（`原文件名_base64.md`）
 
-### 2. 安装依赖
+### 智能特性
 
-```bash
-# 进入项目目录
-cd MDImageEmbed
+- 🎯 **智能路径解析**：自动处理 Obsidian 各种图片路径格式
+  - 标准 Markdown: `![alt](path)`
+  - 尖括号路径: `![alt](<path>)`
+  - Obsidian Wiki 链接: `![[image.png]]`
+  - 绝对路径和相对路径
+- 🔄 **自动跳过**：
+  - 已转换的 Base64 图片
+  - 网络图片 (http:// / https://)
+  - 找不到的图片
+- 🖼️ **支持格式**：PNG, JPG, JPEG, GIF, WebP, SVG, BMP
 
-# 安装所需依赖
-pip install -r requirements.txt
-```
+## 📦 安装
 
-### 依赖包说明
+### 方法 1: 手动安装（推荐）
 
-- `PyQt6` - GUI 框架
-- `PyQt6-WebEngine` - 网页渲染引擎（用于预览）
-- `markdown2` - Markdown 到 HTML 转换
-- `Pillow` - 图片处理
-- `pyperclip` - 剪贴板操作
+1. 下载最新版本的 `main.js` 和 `manifest.json`
+2. 在你的 Obsidian Vault 中创建插件目录：
+   ```
+   <Vault>/.obsidian/plugins/md-image-embed/
+   ```
+3. 将下载的文件放入该目录
+4. 重启 Obsidian
+5. 在 **设置 → 社区插件** 中启用 "MD Image Embed"
 
-## 使用方法
-
-### 启动程序
+### 方法 2: 从源码构建
 
 ```bash
-# 确保已激活 conda 环境
-conda activate MDImageEmbed
+# 克隆仓库
+git clone https://github.com/mengzhishanghun/MZSH-Tools.git
+cd MZSH-Tools/MDImageEmbed/ObsidianPlugin
 
-# 运行程序
-python Main.py
+# 安装依赖
+npm install
+
+# 构建
+npm run build
+
+# 复制到 Obsidian 插件目录
+# Windows
+copy main.js "<Vault>\.obsidian\plugins\md-image-embed\main.js"
+copy manifest.json "<Vault>\.obsidian\plugins\md-image-embed\manifest.json"
+
+# macOS/Linux
+cp main.js "<Vault>/.obsidian/plugins/md-image-embed/main.js"
+cp manifest.json "<Vault>/.obsidian/plugins/md-image-embed/manifest.json"
 ```
 
-### 操作流程
+## 🚀 使用方法
 
-1. **选择文件**
-   - 点击"选择文件"按钮
-   - 选择要处理的 Markdown 文件
-   - 文件内容将显示在左侧编辑区，右侧显示预览
+### 复制到剪贴板
 
-2. **转换图片**
-   - 点击"转换"按钮
-   - 自动扫描所有本地图片引用
-   - 将图片转换为 base64 内嵌格式
-   - 显示转换日志（成功/失败）
+1. 在 Obsidian 文件浏览器中右键点击任意 `.md` 文件
+2. 选择 **📋 复制为 Base64 格式**
+3. 等待转换完成（会显示提示 ✅ 已复制 Base64 格式到剪贴板）
+4. 粘贴到任何需要的地方（博客编辑器、公众号后台等）
 
-3. **编辑内容**
-   - 在左侧编辑区直接修改内容
-   - 右侧预览会自动更新（延迟 500ms）
+### 另存为新文件
 
-4. **保存文件**
-   - **复制**：复制编辑区内容到剪贴板
-   - **覆盖**：保存并覆盖原文件（需确认）
-   - **另存为**：保存为新文件
+1. 在 Obsidian 文件浏览器中右键点击任意 `.md` 文件
+2. 选择 **💾 另存为 Base64 格式**
+3. 自动生成新文件：`原文件名_base64.md`
+4. 新文件中所有本地图片已转换为 Base64 格式
 
-5. **还原修改**
-   - 点击"还原"按钮
-   - 放弃所有修改，恢复到原始内容
+## 📋 使用场景
 
-## 功能说明
+### 场景 1: 发布博客文章
 
-### 图片转换规则
+```markdown
+<!-- 原文件：包含本地图片 -->
+![架构图](./images/architecture.png)
 
-- 仅转换本地图片文件（不转换网络链接）
-- 跳过已经是 base64 格式的图片
-- 支持相对路径和绝对路径
-- 相对路径相对于 Markdown 文件所在目录
+<!-- 转换后：Base64 内嵌 -->
+![架构图](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...)
+```
 
-### 支持的图片格式
+**优势**：无需上传图片到图床，一键发布
 
-- PNG (`.png`)
-- JPEG (`.jpg`, `.jpeg`)
-- GIF (`.gif`)
-- WebP (`.webp`)
-- SVG (`.svg`)
-- BMP (`.bmp`)
+### 场景 2: 分享技术文档
 
-### 错误处理
+你写了一篇包含大量截图的技术文档，需要分享给同事：
 
-- 图片文件不存在：跳过该图片，继续处理其他图片
-- 图片格式不支持：跳过该图片，记录警告
-- 文件读写权限：显示错误对话框
-- Base64 编码失败：跳过该图片，继续处理
+1. 右键文件 → **另存为 Base64 格式**
+2. 发送生成的 `_base64.md` 文件
+3. 同事打开即可看到完整内容（无需下载图片文件夹）
 
-## 项目结构
+### 场景 3: 公众号发布
+
+公众号不支持外链图片，使用本插件：
+
+1. 右键笔记 → **复制为 Base64 格式**
+2. 粘贴到公众号编辑器
+3. 所有图片正常显示
+
+## 🔧 技术细节
+
+### 路径解析策略
+
+插件使用三层路径解析机制，确保找到图片：
+
+1. **Vault 根目录查找**：`/附件/image.png` → `<Vault>/附件/image.png`
+2. **相对路径查找**：`./images/pic.png` → 相对于当前 MD 文件
+3. **Obsidian 链接解析**：使用 Obsidian 的 `getFirstLinkpathDest` API
+
+### 支持的图片语法
+
+```markdown
+# 标准 Markdown
+![描述](path/to/image.png)
+
+# 尖括号路径（Obsidian 常用）
+![描述](<path/to/image.png>)
+![描述](</附件/image.png>)
+
+# Obsidian Wiki 链接
+![[image.png]]
+![[folder/image.png]]
+```
+
+### Base64 编码
+
+- 使用浏览器原生 `btoa()` 方法
+- 自动识别 MIME 类型
+- 支持所有主流图片格式
+
+## 📂 项目结构
 
 ```
 MDImageEmbed/
-├── Main.py                  # 主入口文件
-├── Source/                  # 源码目录
-│   ├── Logic/              # 业务逻辑层
-│   │   ├── ImageConverter.py    # 图片转换器
-│   │   └── FileUtils.py         # 文件工具
-│   └── UI/                 # 界面层
-│       ├── MainWindow.py        # 主窗口
-│       └── assets/              # UI资源
-│           └── style.css        # 预览样式
-├── requirements.txt         # 依赖列表
-├── README.md                # 说明文档
-└── .gitignore               # Git 忽略配置
+├── ObsidianPlugin/              # Obsidian 插件源码
+│   ├── main.ts                  # 插件主文件
+│   ├── manifest.json            # 插件配置
+│   ├── package.json             # 依赖管理
+│   ├── tsconfig.json            # TypeScript 配置
+│   ├── esbuild.config.mjs       # 构建配置
+│   ├── README.md                # 插件文档
+│   └── INSTALL.md               # 安装指南
+├── .gitignore                   # Git 忽略文件
+├── LICENSE                      # MIT 许可证
+└── README.md                    # 项目说明（本文件）
 ```
 
-## 技术栈
+## ⚠️ 注意事项
 
-- **GUI 框架**: PyQt6
-- **Web 引擎**: PyQt6-WebEngine (QWebEngineView)
-- **Markdown 渲染**: markdown2
-- **图片处理**: Pillow
-- **剪贴板**: pyperclip
+### 文件大小
 
-## 注意事项
+Base64 编码会增加约 **33%** 的文件大小：
 
-1. **图片大小**
-   - base64 编码会增加约 33% 的文件大小
-   - 大量或大尺寸图片可能导致 Markdown 文件过大
+- 原图 100KB → Base64 约 133KB
+- 多图文档可能会变得很大
 
-2. **兼容性**
-   - 生成的 base64 图片在所有 Markdown 渲染器中都能显示
-   - 适合需要单文件分发的场景
+**建议**：
+- 仅在需要导出/分享时使用
+- 大量图片的文档建议压缩图片后再转换
 
-3. **性能**
-   - 预览更新有 500ms 延迟，避免频繁刷新
-   - 大文件可能导致预览渲染较慢
+### 性能
 
-4. **文件编码**
-   - 所有文件使用 UTF-8 编码
-   - 确保 Markdown 文件使用 UTF-8 编码
+- 转换速度取决于图片数量和大小
+- 10 张图片（总计 5MB）约需 2-3 秒
+- 转换过程在后台异步进行，不会卡顿界面
 
-## 常见问题
+### 兼容性
 
-### Q: 为什么某些图片没有转换？
+- ✅ Obsidian 桌面版（Windows, macOS, Linux）
+- ✅ Obsidian 移动版（iOS, Android）
+- ⚠️ 需要 Obsidian 0.15.0 或更高版本
 
-A: 可能的原因：
-- 图片文件不存在或路径错误
-- 图片格式不支持
-- 图片已经是 base64 格式
-- 图片是网络链接（http/https）
+## 🛠️ 开发
 
-### Q: 转换后文件很大怎么办？
+### 环境要求
 
-A: base64 编码会增加文件大小，可以：
-- 选择性转换部分图片
-- 压缩图片后再转换
-- 考虑是否真的需要内嵌所有图片
+- Node.js >= 16
+- npm >= 7
 
-### Q: 预览和实际渲染效果不一样？
+### 开发命令
 
-A: 不同的 Markdown 渲染器可能有不同的样式，但 base64 图片本身是通用的。
+```bash
+# 安装依赖
+npm install
 
-## 开发信息
+# 开发模式（自动监听文件变化）
+npm run dev
 
-- **版本**: 1.0.0
-- **Python 版本**: 3.10+
-- **许可**: MIT
+# 生产构建
+npm run build
 
-## 更新日志
+# 类型检查
+tsc -noEmit
+```
 
-### v1.0.0 (2025-10-14)
-- 初始版本
-- 基本的图片转 base64 功能
-- GUI 界面实现
-- 实时预览功能
-- 编辑和保存功能
+### 调试
 
-## 贡献
+1. 在 Obsidian 中启用开发者工具：`Ctrl+Shift+I` (Windows) / `Cmd+Option+I` (macOS)
+2. 修改代码后按 `Ctrl+R` 重载插件
+3. 查看控制台日志
+
+## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
-## 许可证
+### 贡献指南
 
-MIT License
+1. Fork 本仓库
+2. 创建特性分支：`git checkout -b feature/AmazingFeature`
+3. 提交更改：`git commit -m 'Add some AmazingFeature'`
+4. 推送到分支：`git push origin feature/AmazingFeature`
+5. 提交 Pull Request
+
+## 📝 更新日志
+
+### v1.0.0 (2024-10-14)
+
+- ✨ 初始版本发布
+- 📋 支持复制为 Base64 格式到剪贴板
+- 💾 支持另存为 Base64 格式新文件
+- 🎯 智能路径解析（Vault 根目录、相对路径、Wiki 链接）
+- 🖼️ 支持 PNG, JPG, JPEG, GIF, WebP, SVG, BMP
+
+## 📄 许可证
+
+本项目采用 [MIT License](LICENSE) 开源协议。
+
+## 🙏 致谢
+
+- [Obsidian](https://obsidian.md) - 强大的知识管理工具
+- [Obsidian API](https://github.com/obsidianmd/obsidian-api) - 官方 API 文档
+
+## 📮 联系方式
+
+- GitHub: [@mengzhishanghun](https://github.com/mengzhishanghun)
+- Issues: [提交问题](https://github.com/mengzhishanghun/MZSH-Tools/issues)
+
+---
+
+**如果这个插件对你有帮助，请给个 ⭐️ Star 支持一下！**
