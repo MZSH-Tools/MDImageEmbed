@@ -30,6 +30,7 @@ module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
   showConversionLog: true,
+  showDetailedLog: false,
   fileSuffix: "_base64",
   convertWikiLinks: true,
   skipBase64Images: true
@@ -78,7 +79,7 @@ var MDImageEmbedPlugin = class extends import_obsidian.Plugin {
       const result = await this.convertMarkdownToBase64(content, file);
       await navigator.clipboard.writeText(result.content);
       if (this.settings.showConversionLog) {
-        new import_obsidian.Notice(`\u2705 Copied! ${result.convertedCount} images converted, ${result.skippedCount} skipped`);
+        this.showDetailedResults(result);
       } else {
         new import_obsidian.Notice("\u2705 Copied as Base64 format");
       }
@@ -97,7 +98,7 @@ var MDImageEmbedPlugin = class extends import_obsidian.Plugin {
       const newFilePath = file.parent ? `${file.parent.path}/${newFileName}` : newFileName;
       await this.app.vault.create(newFilePath, result.content);
       if (this.settings.showConversionLog) {
-        new import_obsidian.Notice(`\u2705 Saved as ${newFileName}! ${result.convertedCount} images converted`);
+        this.showDetailedResults(result, newFileName);
       } else {
         new import_obsidian.Notice(`\u2705 Saved as ${newFileName}`);
       }
@@ -106,13 +107,59 @@ var MDImageEmbedPlugin = class extends import_obsidian.Plugin {
       console.error("Save failed:", error);
     }
   }
+  // ========== 显示详细处理结果 ==========
+  showDetailedResults(result, fileName) {
+    const total = result.convertedCount + result.skippedCount;
+    let message = fileName ? `\u2705 Saved as ${fileName}
+
+` : "\u2705 Copied to clipboard\n\n";
+    message += `\u{1F4CA} Summary: ${total} images
+`;
+    message += `   \u2022 Converted: ${result.convertedCount}
+`;
+    message += `   \u2022 Skipped: ${result.skippedCount}`;
+    if (this.settings.showDetailedLog) {
+      message += "\n\n";
+      const maxDisplay = 8;
+      const detailsToShow = result.details.slice(0, maxDisplay);
+      for (const detail of detailsToShow) {
+        const fileName2 = detail.path.split("/").pop() || detail.path;
+        const shortName = fileName2.length > 35 ? fileName2.substring(0, 32) + "..." : fileName2;
+        if (detail.status === "success") {
+          message += `\u2713 ${shortName}
+`;
+        } else if (detail.status === "failed") {
+          message += `\u2717 ${shortName}
+  \u2192 ${detail.reason}
+`;
+        } else if (detail.status === "skipped") {
+          message += `\u2298 ${shortName}
+  \u2192 ${detail.reason}
+`;
+        }
+      }
+      if (result.details.length > maxDisplay) {
+        const remaining = result.details.length - maxDisplay;
+        message += `
+... and ${remaining} more`;
+      }
+    }
+    message += `
+
+\u{1F4A1} Console (Ctrl+Shift+I) for full details`;
+    new import_obsidian.Notice(message, 8e3);
+  }
   // ========== 核心转换逻辑 ==========
   async convertMarkdownToBase64(content, sourceFile) {
     const imgRegex = /!\[([^\]]*)\]\(<?([^)">]+)>?\)|!\[\[([^\]]+\.(png|jpg|jpeg|gif|webp|svg|bmp))\]\]/gi;
     let result = content;
     let convertedCount = 0;
     let skippedCount = 0;
+    const details = [];
     const matches = [...content.matchAll(imgRegex)];
+    if (this.settings.showConversionLog) {
+      console.log(`[MDImageEmbed] \u5F00\u59CB\u5904\u7406\u6587\u6863\uFF0C\u5171\u627E\u5230 ${matches.length} \u4E2A\u56FE\u7247`);
+    }
     for (const match of matches) {
       const fullMatch = match[0];
       if (match[1] !== void 0) {
@@ -120,51 +167,98 @@ var MDImageEmbedPlugin = class extends import_obsidian.Plugin {
         const imagePath = match[2];
         if (this.settings.skipBase64Images && imagePath.startsWith("data:image")) {
           skippedCount++;
+          const displayPath = imagePath.substring(0, 30) + "...";
+          details.push({ path: displayPath, status: "skipped", reason: "Already Base64" });
+          if (this.settings.showConversionLog) {
+            console.log(`[\u8DF3\u8FC7] ${displayPath} - \u539F\u56E0: \u5DF2\u662F Base64 \u683C\u5F0F`);
+          }
           continue;
         }
         if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
           skippedCount++;
+          details.push({ path: imagePath, status: "skipped", reason: "Network image (not supported)" });
+          if (this.settings.showConversionLog) {
+            console.log(`[\u8DF3\u8FC7] ${imagePath} - \u539F\u56E0: \u7F51\u7EDC\u56FE\u7247\u4E0D\u652F\u6301\u8F6C\u6362`);
+          }
           continue;
         }
         const base64 = await this.imageToBase64(imagePath, sourceFile);
         if (base64) {
           result = result.replace(fullMatch, `![${altText}](${base64})`);
           convertedCount++;
+          details.push({ path: imagePath, status: "success" });
+          if (this.settings.showConversionLog) {
+            console.log(`[\u6210\u529F] ${imagePath} - \u5DF2\u8F6C\u6362\u4E3A Base64`);
+          }
         } else {
           skippedCount++;
+          details.push({ path: imagePath, status: "failed", reason: "File not found" });
+          if (this.settings.showConversionLog) {
+            console.log(`[\u5931\u8D25] ${imagePath} - \u539F\u56E0: \u6587\u4EF6\u672A\u627E\u5230\u6216\u8BFB\u53D6\u5931\u8D25`);
+          }
         }
       } else if (match[3] !== void 0) {
         const imageName = match[3];
+        const displayPath = `![[${imageName}]]`;
         if (!this.settings.convertWikiLinks) {
           skippedCount++;
+          details.push({ path: displayPath, status: "skipped", reason: "Wiki link conversion disabled" });
+          if (this.settings.showConversionLog) {
+            console.log(`[\u8DF3\u8FC7] ${displayPath} - \u539F\u56E0: Wiki \u94FE\u63A5\u8F6C\u6362\u5DF2\u7981\u7528`);
+          }
           continue;
         }
         const base64 = await this.imageToBase64(imageName, sourceFile);
         if (base64) {
           result = result.replace(fullMatch, `![${imageName}](${base64})`);
           convertedCount++;
+          details.push({ path: displayPath, status: "success" });
+          if (this.settings.showConversionLog) {
+            console.log(`[\u6210\u529F] ${displayPath} - \u5DF2\u8F6C\u6362\u4E3A Base64`);
+          }
         } else {
           skippedCount++;
+          details.push({ path: displayPath, status: "failed", reason: "File not found" });
+          if (this.settings.showConversionLog) {
+            console.log(`[\u5931\u8D25] ${displayPath} - \u539F\u56E0: \u6587\u4EF6\u672A\u627E\u5230\u6216\u8BFB\u53D6\u5931\u8D25`);
+          }
         }
       }
     }
-    console.log(`\u8F6C\u6362\u5B8C\u6210: ${convertedCount} \u4E2A\u56FE\u7247\u5DF2\u8F6C\u6362, ${skippedCount} \u4E2A\u5DF2\u8DF3\u8FC7`);
-    return { content: result, convertedCount, skippedCount };
+    if (this.settings.showConversionLog) {
+      console.log(`[MDImageEmbed] \u5904\u7406\u5B8C\u6210: ${convertedCount} \u4E2A\u6210\u529F, ${skippedCount} \u4E2A\u8DF3\u8FC7`);
+    }
+    return { content: result, convertedCount, skippedCount, details };
   }
   // ========== 图片转 Base64 ==========
   async imageToBase64(imagePath, sourceFile) {
     try {
       const imageFile = this.resolveImagePath(imagePath, sourceFile);
       if (!imageFile) {
-        console.warn(`\u627E\u4E0D\u5230\u56FE\u7247: ${imagePath}`);
+        if (this.settings.showConversionLog) {
+          console.warn(`  \u2514\u2500 \u8DEF\u5F84\u89E3\u6790\u5931\u8D25: \u5728\u4EE5\u4E0B\u4F4D\u7F6E\u90FD\u672A\u627E\u5230\u6587\u4EF6`);
+          console.warn(`     - Vault \u6839\u76EE\u5F55: ${imagePath}`);
+          if (sourceFile.parent) {
+            console.warn(`     - \u76F8\u5BF9\u8DEF\u5F84: ${sourceFile.parent.path}/${imagePath}`);
+          }
+        }
         return null;
+      }
+      if (this.settings.showConversionLog) {
+        console.log(`  \u2514\u2500 \u6587\u4EF6\u5DF2\u627E\u5230: ${imageFile.path}`);
       }
       const arrayBuffer = await this.app.vault.readBinary(imageFile);
       const base64 = this.arrayBufferToBase64(arrayBuffer);
       const mimeType = this.getMimeType(imageFile.extension);
+      if (this.settings.showConversionLog) {
+        const sizeKB = (arrayBuffer.byteLength / 1024).toFixed(2);
+        console.log(`  \u2514\u2500 \u6587\u4EF6\u5927\u5C0F: ${sizeKB} KB, MIME: ${mimeType}`);
+      }
       return `data:${mimeType};base64,${base64}`;
     } catch (error) {
-      console.error(`\u8F6C\u6362\u56FE\u7247\u5931\u8D25: ${imagePath}`, error);
+      if (this.settings.showConversionLog) {
+        console.error(`  \u2514\u2500 \u8BFB\u53D6\u6216\u8F6C\u6362\u5931\u8D25: ${error.message}`);
+      }
       return null;
     }
   }
@@ -172,23 +266,40 @@ var MDImageEmbedPlugin = class extends import_obsidian.Plugin {
   resolveImagePath(imagePath, sourceFile) {
     let cleanPath = imagePath.replace(/^<|>$/g, "").trim();
     try {
-      cleanPath = decodeURIComponent(cleanPath);
+      const decoded = decodeURIComponent(cleanPath);
+      if (decoded !== cleanPath) {
+        if (this.settings.showConversionLog) {
+          console.log(`  \u2514\u2500 URL \u89E3\u7801: "${cleanPath}" \u2192 "${decoded}"`);
+        }
+      }
+      cleanPath = decoded;
     } catch (e) {
-      console.warn(`URL decode failed for path: ${cleanPath}`, e);
+      if (this.settings.showConversionLog) {
+        console.warn(`  \u2514\u2500 URL \u89E3\u7801\u5931\u8D25\uFF0C\u4F7F\u7528\u539F\u8DEF\u5F84: ${cleanPath}`);
+      }
     }
     let file = this.app.vault.getAbstractFileByPath(cleanPath);
     if (file instanceof import_obsidian.TFile) {
+      if (this.settings.showConversionLog) {
+        console.log(`  \u2514\u2500 \u89E3\u6790\u65B9\u6CD5: Vault \u6839\u76EE\u5F55`);
+      }
       return file;
     }
     if (sourceFile.parent) {
       const relativePath = `${sourceFile.parent.path}/${cleanPath}`;
       file = this.app.vault.getAbstractFileByPath(relativePath);
       if (file instanceof import_obsidian.TFile) {
+        if (this.settings.showConversionLog) {
+          console.log(`  \u2514\u2500 \u89E3\u6790\u65B9\u6CD5: \u76F8\u5BF9\u8DEF\u5F84 (${sourceFile.parent.path}/)`);
+        }
         return file;
       }
     }
     const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(cleanPath, sourceFile.path);
     if (resolvedFile instanceof import_obsidian.TFile) {
+      if (this.settings.showConversionLog) {
+        console.log(`  \u2514\u2500 \u89E3\u6790\u65B9\u6CD5: Obsidian \u94FE\u63A5\u89E3\u6790`);
+      }
       return resolvedFile;
     }
     return null;
@@ -225,10 +336,17 @@ var MDImageEmbedSettingTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h2", { text: "MD Image Embed Settings" });
-    new import_obsidian.Setting(containerEl).setName("Show conversion log").setDesc("Display detailed information about converted and skipped images").addToggle((toggle) => toggle.setValue(this.plugin.settings.showConversionLog).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Show conversion log").setDesc("Display summary information in notifications").addToggle((toggle) => toggle.setValue(this.plugin.settings.showConversionLog).onChange(async (value) => {
       this.plugin.settings.showConversionLog = value;
       await this.plugin.saveSettings();
+      this.display();
     }));
+    if (this.plugin.settings.showConversionLog) {
+      new import_obsidian.Setting(containerEl).setName("Show detailed log").setDesc('Show individual image status in notifications (requires "Show conversion log")').addToggle((toggle) => toggle.setValue(this.plugin.settings.showDetailedLog).onChange(async (value) => {
+        this.plugin.settings.showDetailedLog = value;
+        await this.plugin.saveSettings();
+      }));
+    }
     new import_obsidian.Setting(containerEl).setName("File suffix").setDesc('Suffix for "Save as" files (e.g., "_base64" \u2192 filename_base64.md)').addText((text) => text.setPlaceholder("_base64").setValue(this.plugin.settings.fileSuffix).onChange(async (value) => {
       this.plugin.settings.fileSuffix = value || "_base64";
       await this.plugin.saveSettings();
