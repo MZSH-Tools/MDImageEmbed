@@ -224,7 +224,15 @@ export default class MDImageEmbedPlugin extends Plugin {
 	// ========== 路径解析 ==========
 	resolveImagePath(imagePath: string, sourceFile: TFile): TFile | null {
 		// 移除 Obsidian 路径前缀
-		const cleanPath = imagePath.replace(/^<|>$/g, '').trim();
+		let cleanPath = imagePath.replace(/^<|>$/g, '').trim();
+
+		// URL 解码（处理 %20 等编码字符）
+		try {
+			cleanPath = decodeURIComponent(cleanPath);
+		} catch (e) {
+			// 如果解码失败，使用原路径
+			console.warn(`URL decode failed for path: ${cleanPath}`, e);
+		}
 
 		// 方法 1: 直接从 Vault 根目录查找
 		let file = this.app.vault.getAbstractFileByPath(cleanPath);

@@ -28,3 +28,6 @@ venv/
 *.egg-info/
 dist/
 build/
+
+# Custom
+.claude/
