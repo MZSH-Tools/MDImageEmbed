@@ -18,7 +18,7 @@ interface MDImageEmbedSettings {
 }
 
 const DEFAULT_SETTINGS: MDImageEmbedSettings = {
-	showConversionLog: true,
+	showConversionLog: false,
 	showDetailedLog: false,
 	convertWikiLinks: true,
 	skipBase64Images: true,
