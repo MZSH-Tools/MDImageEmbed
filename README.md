@@ -9,7 +9,7 @@ MDImageEmbed is an Obsidian plugin that converts local images in Markdown files 
 
 - **One-click conversion**: Right-click → Copy as Base64 format to clipboard
 - **Smart path resolution**: Handles Obsidian's various image path formats
-- **Anti-reprint protection**: Optional prefix/suffix for copyright notices
+- **Anti-reprint protection**: Add custom prefix/suffix from template files (v1.1.0)
 - **Format support**: PNG, JPG, JPEG, GIF, WebP, SVG, BMP
 - **Wiki link support**: Converts `![[image.png]]` to standard Markdown with Base64
 
